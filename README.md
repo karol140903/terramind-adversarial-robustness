@@ -26,7 +26,7 @@ If you wish to extract patches from new satellite scenes from scratch:
 * Run the notebooks/00_Data_Extraction.ipynb notebook.
 
 ## Repository Layout
-
+```
 terramind-adversarial-robustness/
 ├── data/
 │   ├── raw/          # Place .SAFE granules here
@@ -36,7 +36,7 @@ terramind-adversarial-robustness/
 ├── plots/            # Exported figures
 ├── results/          # Output metrics (.csv)
 └── src/              # Core modules (attacks, metrics, data loading)
-
+```
 ## Reproducing the Results
 
 The core optimization algorithms (PGD, FGSM) and spectral masking functions are located in src/attacks.py. The experiments are separated into standalone notebooks for clarity:
