@@ -15,22 +15,11 @@ pip install -r requirements.txt
 
 To facilitate out-of-the-box reproducibility, the 20 preprocessed multispectral patches (representing urban, water, and forest topologies) used in our experiments are directly included in the data/patches/ directory as ready-to-use PyTorch tensors and .png visualizations.
 
-If you wish to extract patches from new satellite scenes from scratch:
-
-* Download the corresponding Sentinel-2 L2A .SAFE granules from the Copernicus Data Space Ecosystem.
-
-* Extract the archives.
-
-* Place the unzipped .SAFE directories into data/raw/.
-
-* Run the notebooks/00_Data_Extraction.ipynb notebook.
-
 ## Repository Layout
 ```
 terramind-adversarial-robustness/
 ├── data/
-│   ├── raw/          # Place .SAFE granules here
-│   ├── patches/      # Extracted multispectral patches
+│   ├── patches/      # Extracted multispectral patches (.pt / .png)
 │   └── tensors/      # Generated adversarial noise tensors (.pt)
 ├── notebooks/        # Evaluation notebooks
 ├── plots/            # Exported figures
@@ -40,8 +29,6 @@ terramind-adversarial-robustness/
 ## Reproducing the Results
 
 The core optimization algorithms (PGD, FGSM) and spectral masking functions are located in src/attacks.py. The experiments are separated into standalone notebooks for clarity:
-
-* 00_Data_Extraction.ipynb: Demonstrates the extraction and upsampling pipeline from raw .SAFE files to uniform 12-channel tensors.
 
 * 01_Baseline_Evaluation.ipynb: Compares FGSM and PGD optimization in the latent space.
 
