@@ -65,21 +65,21 @@ def extract_patch_dynamic(x0, y0, img_path, size=224):
         folder, _ = BAND_PATHS[band]
         folder_path = os.path.join(img_path, folder)
         
-        # Znalezienie odpowiedniego pliku rastrowego .jp2 dla danego kanału
+        # Finding the right .jp2 raster file for a given channel
         file = [f for f in os.listdir(folder_path) if f"_{band}_" in f][0]
         path = os.path.join(folder_path, file)
 
         with rasterio.open(path) as src:
             data = src.read(1).astype(np.float32)
 
-        # Normalizacja BOA reflectance i usunięcie ewentualnych NaN
+        # Normalization of BOA reflectance and removal of possible NaN
         data = data / 10000.0
         data = np.nan_to_num(data)
         
-        # Wyrównanie przestrzenne do 10m
+        # Spatial alignment up to 10m
         data = upsample_to_10m(data, folder)
 
-        # Wycięcie patcha o odpowiednim rozmiarze
+        # Cutting the patch to the right size
         patch = data[y0:y0+size, x0:x0+size]
         channels.append(patch)
 
