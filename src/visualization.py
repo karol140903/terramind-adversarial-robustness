@@ -33,11 +33,10 @@ def calculate_indices(tensor):
 # ==============================================================================
 
 def plot_rgb_triplet(x_orig, x_adv):
-    """Plots the original RGB, adversarial RGB, and the absolute difference."""
     x_o = x_orig[0].detach().cpu().numpy()
     x_a = x_adv[0].detach().cpu().numpy()
 
-    # RGB channels in Sentinel-2 tensor (B04, B03, B02 -> index 3, 2, 1)
+    # RGB = B04, B03, B02 → [3,2,1]
     rgb_orig = np.stack([x_o[3], x_o[2], x_o[1]], axis=-1)
     rgb_adv  = np.stack([x_a[3], x_a[2], x_a[1]], axis=-1)
 
@@ -48,21 +47,21 @@ def plot_rgb_triplet(x_orig, x_adv):
     diff = np.abs(rgb_adv - rgb_orig)
     vmax = np.percentile(diff, 99)
 
-    plt.figure(figsize=(12, 4))
-    
-    plt.subplot(1, 3, 1)
+    plt.figure(figsize=(12,4))
+
+    plt.subplot(1,3,1)
     plt.imshow(rgb_orig)
-    plt.title("Original RGB")
+    plt.title("Original")
     plt.axis('off')
 
-    plt.subplot(1, 3, 2)
+    plt.subplot(1,3,2)
     plt.imshow(rgb_adv)
-    plt.title("Adversarial RGB")
+    plt.title("Adversarial")
     plt.axis('off')
 
-    plt.subplot(1, 3, 3)
+    plt.subplot(1,3,3)
     plt.imshow(diff, cmap='hot', vmin=0, vmax=vmax)
-    plt.title("Adversarial Noise (Difference)")
+    plt.title("Diff")
     plt.axis('off')
 
     plt.tight_layout()
