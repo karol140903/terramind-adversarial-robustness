@@ -32,36 +32,42 @@ def calculate_indices(tensor):
 # RGB & SINGLE PATCH VISUALIZATIONS
 # ==============================================================================
 
-def plot_rgb_triplet(x_orig, x_adv):
+def plot_rgb_triplet_and_noise(x_orig, x_adv, epsilon=0.01):
     x_o = x_orig[0].detach().cpu().numpy()
     x_a = x_adv[0].detach().cpu().numpy()
 
-    # RGB = B04, B03, B02 → [3,2,1]
+    # Extract RGB channels based on the original logic: B04, B03, B02 -> indices 3, 2, 1
     rgb_orig = np.stack([x_o[3], x_o[2], x_o[1]], axis=-1)
     rgb_adv  = np.stack([x_a[3], x_a[2], x_a[1]], axis=-1)
 
+    # Extract the raw 3-channel noise tensor
+    raw_noise_rgb = rgb_adv - rgb_orig
+
+    # Scale the base images for human visibility
     scale = np.percentile(rgb_orig, 99)
     rgb_orig = np.clip(rgb_orig / scale, 0, 1)
     rgb_adv  = np.clip(rgb_adv / scale, 0, 1)
 
-    diff = np.abs(rgb_adv - rgb_orig)
-    vmax = np.percentile(diff, 99)
+    # Scale the noise for visualization
+    # Dividing by epsilon stretches the small perturbations (e.g., 0.01) to a visible scale (1.0)
+    visible_noise_rgb = np.clip(np.abs(raw_noise_rgb) / epsilon, 0, 1)
 
-    plt.figure(figsize=(12,4))
+    plt.figure(figsize=(15, 5))
 
-    plt.subplot(1,3,1)
+    plt.subplot(1, 3, 1)
     plt.imshow(rgb_orig)
-    plt.title("Original")
+    plt.title("Original Image (RGB)")
     plt.axis('off')
 
-    plt.subplot(1,3,2)
+    plt.subplot(1, 3, 2)
     plt.imshow(rgb_adv)
-    plt.title("Adversarial")
+    plt.title("Adversarial Image (RGB)")
     plt.axis('off')
 
-    plt.subplot(1,3,3)
-    plt.imshow(diff, cmap='hot', vmin=0, vmax=vmax)
-    plt.title("Diff")
+    plt.subplot(1, 3, 3)
+    # Plotting the actual isolated noise as a standard color image
+    plt.imshow(visible_noise_rgb)
+    plt.title("Isolated RGB Noise")
     plt.axis('off')
 
     plt.tight_layout()
