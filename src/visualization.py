@@ -32,44 +32,54 @@ def calculate_indices(tensor):
 # RGB & SINGLE PATCH VISUALIZATIONS
 # ==============================================================================
 
-def plot_rgb_triplet(x_orig, x_adv, epsilon=0.01):
-    x_o = x_orig[0].detach().cpu().numpy()
-    x_a = x_adv[0].detach().cpu().numpy()
+def plot_adversarial_comparison(x_orig, x_adv, bands_order):
+    """
+    Extracts tensors from GPU, constructs RGB images, and plots the comparison.
+    Assumes x_orig and x_adv are of shape [1, 12, 224, 224].
+    """
+    # Move to CPU and remove the batch dimension -> [12, 224, 224]
+    orig = x_orig.detach().cpu().squeeze()
+    adv = x_adv.detach().cpu().squeeze()
+    
+    # Calculate absolute difference
+    diff = torch.abs(adv - orig)
+    
+    # Map RGB indices based on standard Sentinel-2 bands order
+    # Red: B04 (idx 3), Green: B03 (idx 2), Blue: B02 (idx 1)
+    r_idx = 3
+    g_idx = 2
+    b_idx = 1
+    
+    def to_rgb_image(tensor_3d, is_diff=False):
+        # Extract RGB channels and permute dimensions to [H, W, C]
+        rgb = tensor_3d[[r_idx, g_idx, b_idx], :, :].permute(1, 2, 0).numpy()
+        
+        if is_diff:
+            # Amplify noise for visual inspection
+            rgb = rgb * 50.0 
+        else:
+            # Standard brightness adjustment for Sentinel-2 L2A optical data
+            rgb = rgb * 3.0 
+            
+        # Clip values to valid image range [0, 1]
+        return np.clip(rgb, 0, 1)
 
-    # Extract RGB channels based on the original logic: B04, B03, B02 -> indices 3, 2, 1
-    rgb_orig = np.stack([x_o[3], x_o[2], x_o[1]], axis=-1)
-    rgb_adv  = np.stack([x_a[3], x_a[2], x_a[1]], axis=-1)
+    img_orig = to_rgb_image(orig)
+    img_adv = to_rgb_image(adv)
+    img_diff = to_rgb_image(diff, is_diff=True)
 
-    # Extract the raw 3-channel noise tensor
-    raw_noise_rgb = rgb_adv - rgb_orig
-
-    # Scale the base images for human visibility
-    scale = np.percentile(rgb_orig, 99)
-    rgb_orig = np.clip(rgb_orig / scale, 0, 1)
-    rgb_adv  = np.clip(rgb_adv / scale, 0, 1)
-
-    # Scale the noise for visualization
-    # Dividing by epsilon stretches the small perturbations (e.g., 0.01) to a visible scale (1.0)
-    visible_noise_rgb = np.clip(np.abs(raw_noise_rgb) / epsilon, 0, 1)
-
-    plt.figure(figsize=(15, 5))
-
-    plt.subplot(1, 3, 1)
-    plt.imshow(rgb_orig)
-    plt.title("Original Image (RGB)")
-    plt.axis('off')
-
-    plt.subplot(1, 3, 2)
-    plt.imshow(rgb_adv)
-    plt.title("Adversarial Image (RGB)")
-    plt.axis('off')
-
-    plt.subplot(1, 3, 3)
-    # Plotting the actual isolated noise as a standard color image
-    plt.imshow(visible_noise_rgb)
-    plt.title("Isolated RGB Noise")
-    plt.axis('off')
-
+    # Generate plots without titles for publication rigor
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    
+    axes[0].imshow(img_orig)
+    axes[0].axis('off')
+    
+    axes[1].imshow(img_adv)
+    axes[1].axis('off')
+    
+    axes[2].imshow(img_diff)
+    axes[2].axis('off')
+    
     plt.tight_layout()
     plt.show()
 
