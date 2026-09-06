@@ -7,25 +7,20 @@ from matplotlib.gridspec import GridSpec
 # INDICES CALCULATION HELPERS
 # ==============================================================================
 
-def calculate_indices(tensor):
+def calculate_physical_indices(tensor):
     """
-    Calculates RGB and spectral indices (NDVI, NDWI, NDBI) from a 12-channel Sentinel-2 tensor.
-    Expected band indices: Green=2, Red=3, NIR=7, SWIR=10
+    Calculates RGB and standard physical indices (NDVI, NDWI, NDBI) 
+    from a 12-channel Sentinel-2 tensor.
     """
-    epsilon = 1e-8
-    green = tensor[2]
-    red = tensor[3]
-    nir = tensor[7]
-    swir = tensor[10]
+    # RGB: Red (B04, idx 3), Green (B03, idx 2), Blue (B02, idx 1)
+    rgb = tensor[[3, 2, 1], :, :].transpose(1, 2, 0)
+    rgb = np.clip(rgb * 3.0, 0, 1) # Standard brightening for S2L2A
 
-    ndvi = (nir - red) / (nir + red + epsilon)
-    ndwi = (green - nir) / (green + nir + epsilon)
-    ndbi = (swir - nir) / (swir + nir + epsilon)
-
-    rgb = np.stack([red, green, tensor[1]], axis=-1)
-    p99 = np.percentile(rgb, 99)
-    rgb = np.clip(rgb / (p99 + epsilon), 0, 1)
-
+    # Indices calculations with epsilon to avoid division by zero
+    ndvi = (tensor[7] - tensor[3]) / (tensor[7] + tensor[3] + 1e-8)
+    ndwi = (tensor[2] - tensor[7]) / (tensor[2] + tensor[7] + 1e-8)
+    ndbi = (tensor[10] - tensor[7]) / (tensor[10] + tensor[7] + 1e-8)
+    
     return rgb, ndvi, ndwi, ndbi
 
 # ==============================================================================
@@ -86,9 +81,10 @@ def plot_adversarial_comparison(x_orig, x_adv, bands_order):
 def plot_spectral_indices_grid(x_orig):
     """
     Plots a 1x4 grid for a single patch: [RGB, NDVI, NDWI, NDBI].
+    Assumes x_orig is a tensor of shape [1, 12, 224, 224].
     """
     tensor = x_orig.detach().cpu().squeeze().numpy()
-    rgb, ndvi, ndwi, ndbi = calculate_indices(tensor)
+    rgb, ndvi, ndwi, ndbi = calculate_physical_indices(tensor)
     
     plots = [rgb, ndvi, ndwi, ndbi]
     titles = ["RGB", "NDVI", "NDWI", "NDBI"]
@@ -118,6 +114,10 @@ def plot_spectral_indices_grid(x_orig):
 # MULTI-CHANNEL VISUALIZATIONS
 # ==============================================================================
 
+# ==============================================================================
+# MULTI-CHANNEL VISUALIZATIONS
+# ==============================================================================
+
 def plot_all_channels_horizontal(x_orig, x_adv, bands_order, title_prefix="", epsilon=0.01):
     """
     Plots all 12 channels horizontally in a 3x12 grid (Orig, Adv, Noise).
@@ -128,7 +128,8 @@ def plot_all_channels_horizontal(x_orig, x_adv, bands_order, title_prefix="", ep
     num_channels = orig.shape[0]
 
     fig, axes = plt.subplots(3, num_channels, figsize=(26, 8))
-    fig.suptitle(f"{title_prefix} - 12-Channel Adversarial Tensor", fontsize=18, weight='bold', y=1.05)
+    if title_prefix:
+        fig.suptitle(f"{title_prefix} - 12-Channel Adversarial Tensor", fontsize=18, weight='bold', y=1.05)
 
     for i in range(num_channels):
         band_name = bands_order[i]
@@ -178,7 +179,11 @@ def plot_semantic_shift_grid(t_orig_list, t_adv_list, labels):
         idx_orig = funcs[row_idx](t_orig)
         idx_adv = funcs[row_idx](t_adv)
         idx_delta = idx_adv - idx_orig
+        
+        # Determine max noise value to center the colormap properly
         vmax_noise = np.max(np.abs(idx_delta))
+        if vmax_noise == 0:
+            vmax_noise = 0.01
 
         # 1. Clean Index
         axes[row_idx, 0].imshow(idx_orig, cmap=cmaps[row_idx], vmin=-1.0, vmax=1.0)
