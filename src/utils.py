@@ -3,13 +3,6 @@ import numpy as np
 import random
 import os
 
-# Define the standard Sentinel-2 bands order used across all experiments
-BANDS_ORDER = [
-    "B01", "B02", "B03", "B04",
-    "B05", "B06", "B07", "B08",
-    "B8A", "B09", "B11", "B12"
-]
-
 def set_seed(seed=42):
     """
     Locks all random number generators to ensure complete reproducibility 
