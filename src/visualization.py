@@ -32,7 +32,7 @@ def calculate_indices(tensor):
 # RGB & SINGLE PATCH VISUALIZATIONS
 # ==============================================================================
 
-def plot_rgb_triplet_and_noise(x_orig, x_adv, epsilon=0.01):
+def plot_rgb_triplet(x_orig, x_adv, epsilon=0.01):
     x_o = x_orig[0].detach().cpu().numpy()
     x_a = x_adv[0].detach().cpu().numpy()
 
